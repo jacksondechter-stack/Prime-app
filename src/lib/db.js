@@ -16,24 +16,12 @@ function getClient() {
 async function init() {
   if (_initialized) return;
   const c = getClient();
-  await c.executeMultiple(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL COLLATE NOCASE,
-      password_hash TEXT NOT NULL,
-      name TEXT NOT NULL,
-      profile TEXT NOT NULL DEFAULT '{}',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE TABLE IF NOT EXISTS daily_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      date TEXT NOT NULL,
-      data TEXT NOT NULL DEFAULT '{}',
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(user_id, date)
-    );
-  `);
+  try {
+    await c.execute(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL COLLATE NOCASE, password_hash TEXT NOT NULL, name TEXT NOT NULL, profile TEXT NOT NULL DEFAULT '{}', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+    await c.execute(`CREATE TABLE IF NOT EXISTS daily_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, date TEXT NOT NULL, data TEXT NOT NULL DEFAULT '{}', updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, date))`);
+  } catch (e) {
+    console.log('Tables may already exist:', e.message);
+  }
   _initialized = true;
 }
 
