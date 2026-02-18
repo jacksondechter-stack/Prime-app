@@ -54,6 +54,60 @@ function LG({onLogin,back,goNew}){const[n,sN]=useState("");const[pw,sPw]=useStat
   const go=async()=>{if(!n.trim()||!pw)return;sLd(true);sE("");const e=await onLogin(n.trim(),pw);if(e){sE(e);sLd(false);}};
   return <div style={{fontFamily:FF,background:"#000",color:"#fff",minHeight:"100vh",maxWidth:430,margin:"0 auto",padding:"0 28px",display:"flex",flexDirection:"column",justifyContent:"center"}}><button onClick={back} style={{position:"fixed",top:20,left:20,background:"none",border:"none",color:"#555",cursor:"pointer",fontFamily:FF,fontSize:14}}>← Back</button><div className="fu"><div style={{fontSize:14,fontWeight:800,letterSpacing:6,color:"#e8372c",marginBottom:20}}>PRIME</div><h2 style={{fontSize:24,fontWeight:700,marginBottom:20}}>Welcome back</h2><input value={n} onChange={e=>{sN(e.target.value);sE("")}} placeholder="Username" style={IS}/><input type="password" value={pw} onChange={e=>{sPw(e.target.value);sE("")}} placeholder="Password" onKeyDown={e=>e.key==="Enter"&&go()} style={{...IS,marginTop:10}}/>{err&&<div style={{color:"#e8372c",fontSize:13,marginTop:8}}>{err}</div>}<button onClick={go} disabled={ld} style={{...BTS,fontSize:16,padding:16,borderRadius:14}}>{ld?"...":"Log In"}</button><button onClick={goNew} style={{...BTS,background:"#111",color:"#666",fontSize:14}}>Create account</button></div></div>;}
 
+function BA({f,u,cBF,gBF,cC,gC,cF,cL,gF,gL,fLoss,mG,hI,H2}){
+  const[nowImg,setNowImg]=useState(null);const[goalImg,setGoalImg]=useState(null);
+  const[nowBF,setNowBF]=useState(null);const[goalBFa,setGoalBFa]=useState(null);
+  const[loading,setLoading]=useState("");const[err,setErr]=useState("");
+  const nowRef=useRef(null);const goalRef=useRef(null);
+  const toB64=file=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(",")[1]);r.onerror=()=>rej(new Error("Read failed"));r.readAsDataURL(file);});
+  const analyze=async(file,ctx)=>{
+    setLoading(ctx);setErr("");
+    try{const b64=await toB64(file);
+    const res=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({image:b64,weight:+f.w,height:hI,age:+f.age,sex:f.sex,context:ctx})});
+    const data=await res.json();
+    if(data.bf){if(ctx==="now"){setNowBF(data);u("cBF",data.bf);u("nowPhoto",true);}else{setGoalBFa(data);u("gBF",data.bf);u("goalPhoto",true);}}
+    else setErr(data.error||"Could not analyze");}catch(e){setErr("Failed to analyze photo");}
+    setLoading("");};
+  const onFile=(e,ctx)=>{const file=e.target.files?.[0];if(!file)return;const url=URL.createObjectURL(file);
+    if(ctx==="now")setNowImg(url);else setGoalImg(url);analyze(file,ctx);};
+  const usedCBF=nowBF?nowBF.bf:cBF;const usedGBF=goalBFa?goalBFa.bf:gBF;
+  const uCF=usedCBF?Math.round(+f.w*usedCBF/100):cF;const uCL=usedCBF?Math.round(+f.w*(1-usedCBF/100)):cL;
+  const uGF=usedGBF?Math.round(+f.gw*usedGBF/100):gF;const uGL=usedGBF?Math.round(+f.gw*(1-usedGBF/100)):gL;
+  const uFL=Math.max(0,uCF-uGF);const uMG=uGL-uCL;
+  const uCC=usedCBF?bfL(usedCBF,f.sex):{l:"",c:"#fff"};const uGC=usedGBF?bfL(usedGBF,f.sex):{l:"",c:"#fff"};
+  return <div className="fu"><h2 style={H2}>Body analysis</h2>
+    <div style={{fontSize:13,color:"#555",marginBottom:14}}>Upload photos for AI body fat estimation, or use our formula.</div>
+    <div style={{display:"flex",gap:10,marginBottom:14}}>
+      <div style={{flex:1,textAlign:"center"}}>
+        <input ref={nowRef} type="file" accept="image/*" capture="environment" onChange={e=>onFile(e,"now")} style={{display:"none"}}/>
+        <div onClick={()=>nowRef.current?.click()} style={{...BxS,padding:nowImg?0:20,cursor:"pointer",overflow:"hidden",minHeight:120,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column"}}>
+          {nowImg?<img src={nowImg} style={{width:"100%",borderRadius:12,objectFit:"cover",maxHeight:160}}/>:
+          <><div style={{fontSize:24,marginBottom:4}}>📸</div><div style={{fontSize:10,color:"#555"}}>Upload NOW photo</div></>}
+        </div>
+        {loading==="now"&&<div style={{fontSize:10,color:"#e8372c",marginTop:4}}>Analyzing...</div>}
+        {nowBF&&<div style={{marginTop:6}}><div style={{fontSize:20,fontWeight:800}}>{nowBF.bf}%</div><div style={{fontSize:10,color:uCC.c}}>{nowBF.label||uCC.l}</div></div>}
+        {!nowBF&&<div style={{marginTop:6}}><div style={{fontSize:9,fontWeight:700,color:"#555"}}>NOW</div><div style={{fontSize:20,fontWeight:800}}>{f.w}</div><div style={{fontSize:14,fontWeight:700,color:uCC.c}}>~{usedCBF}%</div><div style={{fontSize:9,color:"#333"}}>{uCF}lb fat · {uCL}lb lean</div></div>}
+      </div>
+      <div style={{display:"flex",alignItems:"center",color:"#333"}}>→</div>
+      <div style={{flex:1,textAlign:"center"}}>
+        <input ref={goalRef} type="file" accept="image/*" onChange={e=>onFile(e,"goal")} style={{display:"none"}}/>
+        <div onClick={()=>goalRef.current?.click()} style={{...BxS,padding:goalImg?0:20,cursor:"pointer",overflow:"hidden",borderColor:"#30d15830",minHeight:120,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column"}}>
+          {goalImg?<img src={goalImg} style={{width:"100%",borderRadius:12,objectFit:"cover",maxHeight:160}}/>:
+          <><div style={{fontSize:24,marginBottom:4}}>🎯</div><div style={{fontSize:10,color:"#555"}}>Upload GOAL photo</div></>}
+        </div>
+        {loading==="goal"&&<div style={{fontSize:10,color:"#30d158",marginTop:4}}>Analyzing...</div>}
+        {goalBFa&&<div style={{marginTop:6}}><div style={{fontSize:20,fontWeight:800}}>{goalBFa.bf}%</div><div style={{fontSize:10,color:uGC.c}}>{goalBFa.label||uGC.l}</div></div>}
+        {!goalBFa&&<div style={{marginTop:6}}><div style={{fontSize:9,fontWeight:700,color:"#30d158"}}>PRIME</div><div style={{fontSize:20,fontWeight:800}}>{f.gw}</div><div style={{fontSize:14,fontWeight:700,color:uGC.c}}>~{usedGBF}%</div><div style={{fontSize:9,color:"#333"}}>{uGF}lb fat · {uGL}lb lean</div></div>}
+      </div>
+    </div>
+    {err&&<div style={{fontSize:12,color:"#e8372c",marginBottom:8}}>{err}</div>}
+    {(nowBF||goalBFa)&&<div style={{...BxS,padding:14}}><div style={{fontSize:13,color:"#999",lineHeight:1.8}}>
+      {nowBF&&<><strong style={{color:"#fff"}}>AI estimate:</strong> {nowBF.note} </>}
+      {goalBFa&&<><br/><strong style={{color:"#30d158"}}>Goal:</strong> {goalBFa.note}</>}
+    </div></div>}
+    <div style={{...BxS,padding:14}}><div style={{fontSize:13,color:"#999",lineHeight:1.8}}>{uFL>0&&<>Drop <strong style={{color:"#e8372c"}}>~{uFL}lbs fat</strong>. </>}{uMG>0&&uFL>0&&<>Build <strong style={{color:"#30d158"}}>~{uMG}lbs lean</strong>. Recomp = longer. </>}</div></div>
+  </div>;}
+
 function OB({onCreate,back}){const[st,sS]=useState(0);const[f,sF]=useState({un:"",name:"",pw:"",pw2:"",hF:"",hI:"",w:"",gw:"",age:"",sex:"",dl:"",drink:"",train:""});const u=(k,v)=>sF(p=>({...p,[k]:v}));const hI=(+f.hF||0)*12+(+f.hI||0);const cBF=hI&&+f.w&&+f.age&&f.sex?estBF(+f.w,hI,+f.age,f.sex):0;const gBF=hI&&+f.gw&&+f.age&&f.sex?estBF(+f.gw,hI,+f.age,f.sex):0;const tdee=hI?cTDEE(+f.w||150,hI,+f.age||25,f.sex||"male",f.train||"3-4x/week"):2000;const calT=tdee-500;const proT=Math.round((+f.w||150)*.9);const dL=f.dl?dB(ds(),f.dl):0;const cF=cBF?Math.round(+f.w*cBF/100):0;const cL=cBF?Math.round(+f.w*(1-cBF/100)):0;const gF=gBF?Math.round(+f.gw*gBF/100):0;const gL=gBF?Math.round(+f.gw*(1-gBF/100)):0;const fLoss=Math.max(0,cF-gF);const mG=gL-cL;const cC=cBF?bfL(cBF,f.sex):{l:"",c:"#fff"};const gC=gBF?bfL(gBF,f.sex):{l:"",c:"#fff"};const pwOk=validPw(f.pw);const pwM=f.pw===f.pw2;
   const fin=()=>onCreate(f.un.trim(),f.pw,{name:f.name,hIn:hI,w:+f.w,gw:+f.gw,sw:+f.w,age:+f.age,sex:f.sex,dl:f.dl,drink:f.drink,train:f.train,sd:ds(),cBF,gBF,tdee,calT,proT,woDay:0});
   const ok=[f.un.trim()&&f.name.trim()&&pwOk&&pwM,f.hF&&f.w&&f.age&&f.sex,f.gw,true,f.dl,f.drink&&f.train,true];
@@ -62,7 +116,7 @@ function OB({onCreate,back}){const[st,sS]=useState(0);const[f,sF]=useState({un:"
   {st===0&&<div className="fu"><h2 style={H2}>Create account</h2><p style={Sub}>Pick a username and password.</p><input value={f.un} onChange={e=>u("un",e.target.value.replace(/\s/g,""))} placeholder="Username" style={IS}/><input value={f.name} onChange={e=>u("name",e.target.value)} placeholder="First name" style={{...IS,marginTop:10}}/><input type="password" value={f.pw} onChange={e=>u("pw",e.target.value)} placeholder="Password" style={{...IS,marginTop:10}}/><div style={{fontSize:11,color:f.pw.length>0?(pwOk?"#30d158":"#e8372c"):"#333",marginTop:4}}>6+ chars, 1 uppercase{pwOk?" ✓":""}</div><input type="password" value={f.pw2} onChange={e=>u("pw2",e.target.value)} placeholder="Confirm password" style={{...IS,marginTop:10}}/>{f.pw2&&!pwM&&<div style={{fontSize:11,color:"#e8372c",marginTop:4}}>Doesn't match</div>}</div>}
   {st===1&&<div className="fu"><h2 style={H2}>About you</h2><div style={{display:"flex",gap:10}}><div style={{flex:1}}><label style={LS}>Ft</label><input type="number" inputMode="numeric" value={f.hF} onChange={e=>u("hF",e.target.value)} placeholder="5" style={IS}/></div><div style={{flex:1}}><label style={LS}>In</label><input type="number" inputMode="numeric" value={f.hI} onChange={e=>u("hI",e.target.value)} placeholder="9" style={IS}/></div></div><label style={LS}>Weight</label><input type="number" inputMode="decimal" value={f.w} onChange={e=>u("w",e.target.value)} placeholder="152" style={IS}/><label style={LS}>Age</label><input type="number" inputMode="numeric" value={f.age} onChange={e=>u("age",e.target.value)} placeholder="26" style={IS}/><label style={LS}>Sex</label><div style={{display:"flex",gap:10,marginTop:4}}><button onClick={()=>u("sex","male")} style={Chp(f.sex==="male")}>Male</button><button onClick={()=>u("sex","female")} style={Chp(f.sex==="female")}>Female</button></div></div>}
   {st===2&&<div className="fu"><h2 style={H2}>Goal</h2><label style={LS}>Goal weight</label><input type="number" inputMode="decimal" value={f.gw} onChange={e=>u("gw",e.target.value)} placeholder="140" style={IS}/></div>}
-  {st===3&&<div className="fu"><h2 style={H2}>Body analysis</h2><div style={{display:"flex",gap:10,marginBottom:14}}><div style={{...BxS,flex:1,textAlign:"center",padding:14}}><div style={{fontSize:9,fontWeight:700,color:"#555"}}>NOW</div><div style={{fontSize:22,fontWeight:800}}>{f.w}</div><div style={{fontSize:14,fontWeight:700,color:cC.c}}>~{cBF}%</div><div style={{fontSize:9,color:"#333"}}>{cF}lb fat · {cL}lb lean</div></div><div style={{display:"flex",alignItems:"center",color:"#333"}}>→</div><div style={{...BxS,flex:1,textAlign:"center",padding:14,borderColor:"#30d15830"}}><div style={{fontSize:9,fontWeight:700,color:"#30d158"}}>PRIME</div><div style={{fontSize:22,fontWeight:800}}>{f.gw}</div><div style={{fontSize:14,fontWeight:700,color:gC.c}}>~{gBF}%</div><div style={{fontSize:9,color:"#333"}}>{gF}lb fat · {gL}lb lean</div></div></div><div style={{...BxS,padding:14}}><div style={{fontSize:13,color:"#999",lineHeight:1.8}}>{fLoss>0&&<>Drop <strong style={{color:"#e8372c"}}>~{fLoss}lbs fat</strong>. </>}{mG>0&&fLoss>0&&<>Build <strong style={{color:"#30d158"}}>~{mG}lbs lean</strong>. Recomp = longer. </>}</div></div></div>}
+  {st===3&&<BA f={f} u={u} cBF={cBF} gBF={gBF} cC={cC} gC={gC} cF={cF} cL={cL} gF={gF} gL={gL} fLoss={fLoss} mG={mG} hI={hI} H2={H2}/>}
   {st===4&&<div className="fu"><h2 style={H2}>Deadline</h2><input type="date" value={f.dl} onChange={e=>u("dl",e.target.value)} style={{...IS,colorScheme:"dark"}}/>{f.dl&&dL>0&&+f.w&&+f.gw&&(()=>{const tc=Math.abs(+f.w-+f.gw),wk=dL/7,rt=tc/wk;return <div style={{...BxS,padding:14,marginTop:14}}><div style={{fontSize:13,color:"#999",lineHeight:1.8}}><strong style={{color:"#fff"}}>{dL}d</strong> · <strong style={{color:"#e8372c"}}>{tc}lbs</strong> · <strong>{rt.toFixed(1)}/wk</strong>{rt>2?<><br/><strong style={{color:"#e8372c"}}>🚨 Too fast.</strong></>:rt>1.5?<><br/><strong style={{color:"#ffd60a"}}>⚠️ Aggressive.</strong></>:<><br/><strong style={{color:"#30d158"}}>✅ Doable.</strong></>}</div></div>})()}</div>}
   {st===5&&<div className="fu"><h2 style={H2}>Lifestyle</h2><label style={{...LS,marginTop:0}}>Drinking?</label><div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:16}}>{["Never","1x/week","2x/week","3+/week"].map(o=> <button key={o} onClick={()=>u("drink",o)} style={Chp(f.drink===o)}>{o}</button>)}</div><label style={LS}>Training?</label><div style={{display:"flex",flexWrap:"wrap",gap:8}}>{["Not training","1-2x/week","3-4x/week","5+/week"].map(o=> <button key={o} onClick={()=>u("train",o)} style={Chp(f.train===o)}>{o}</button>)}</div></div>}
   {st===6&&<div className="fu"><h2 style={H2}>Your plan</h2><p style={Sub}>Built for {f.name}.</p><div style={{...BxS,padding:16}}><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}><div><div style={{fontSize:10,color:"#444"}}>Daily cals</div><div style={{fontSize:22,fontWeight:800}}>{calT}</div></div><div><div style={{fontSize:10,color:"#444"}}>Protein</div><div style={{fontSize:22,fontWeight:800}}>{proT}g</div></div><div><div style={{fontSize:10,color:"#444"}}>TDEE</div><div style={{fontSize:18,color:"#888"}}>{tdee}</div></div><div><div style={{fontSize:10,color:"#444"}}>Split</div><div style={{fontSize:14,color:"#888"}}>Push/Pull/Legs</div></div></div></div></div>}
