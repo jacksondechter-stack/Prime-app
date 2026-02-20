@@ -1,59 +1,129 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
-export async function POST(request) {
+export async function POST(req) {
   try {
-    const { image, weight, height, age, sex, context } = await request.json();
-    if (!image) return NextResponse.json({ error: 'Image required' }, { status: 400 });
+    const body = await req.json();
+    const image = body.image;
+    const type = body.type || body.context || "current";
+    
+    if (!image) {
+      return NextResponse.json({ error: "No image provided" }, { status: 400 });
+    }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
+    // Extract base64 data and media type
+    let base64Data = image;
+    let mediaType = "image/jpeg";
+    
+    if (image.startsWith("data:")) {
+      const match = image.match(/^data:(image\/\w+);base64,(.+)$/);
+      if (match) {
+        mediaType = match[1];
+        base64Data = match[2];
+      } else {
+        base64Data = image.split(",")[1] || image;
+      }
+    }
 
-    const heightStr = height ? `${Math.floor(height/12)}'${height%12}"` : 'unknown height';
+    const prompt = type === "goal"
+      ? `You are a fitness AI. Analyze this goal physique photo. Estimate the body fat percentage of the person in this photo. Respond with ONLY a JSON object, no other text: {"bf": <number>, "lean": "yes or no", "notes": "<brief 1-sentence assessment>"}`
+      : `You are a fitness AI. Analyze this photo for body composition. Estimate the body fat percentage. Respond with ONLY a JSON object, no other text: {"bf": <number>, "muscle": "low/moderate/high", "notes": "<brief 1-sentence assessment>"}`;
 
-    const prompt = context === 'goal' 
-      ? `You are a fitness expert analyzing a goal/inspiration physique photo. Based on the visible muscle definition, body proportions, and leanness in this image, estimate the body fat percentage AND a realistic goal weight for someone who is ${sex}, ${age} years old, ${heightStr} tall, currently weighing ${weight} lbs. What would they likely weigh if they achieved this physique? Respond with ONLY a JSON object: {"bf": 14, "goalWeight": 155, "label": "Athletic", "note": "Visible ab definition with good muscle mass. For your frame, achieving this physique would likely put you around 155 lbs at approximately 14% body fat."}`
-      : `You are a fitness expert analyzing a current physique photo. Based on the visible body composition - looking at muscle definition, fat distribution, abdominal visibility, and overall proportions - estimate this person's body fat percentage. They are ${sex}, ${age} years old, ${heightStr} tall, weighing ${weight} lbs. Respond with ONLY a JSON object: {"bf": 22, "label": "Average", "note": "Moderate fat covering with some muscle definition visible suggests approximately 22% body fat"}`;
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
+        "Content-Type": "application/json",
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 400,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: image } },
-            { type: 'text', text: prompt }
-          ]
-        }]
-      })
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 300,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "image",
+                source: {
+                  type: "base64",
+                  media_type: mediaType,
+                  data: base64Data,
+                },
+              },
+              { type: "text", text: prompt },
+            ],
+          },
+        ],
+      }),
     });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("Anthropic API error:", response.status, errText);
+      return NextResponse.json(
+        { error: `API error ${response.status}: ${errText.slice(0, 200)}` },
+        { status: 500 }
+      );
+    }
 
     const data = await response.json();
     
-    console.log('Claude API status:', response.status);
-    console.log('Claude API response:', JSON.stringify(data).substring(0, 500));
-
-    if (data.error) {
-      return NextResponse.json({ error: data.error.message || 'API error', detail: data.error.type }, { status: 500 });
+    // Extract text from the response - handle multiple content block formats
+    let text = "";
+    if (data.content && Array.isArray(data.content)) {
+      text = data.content
+        .filter((block) => block.type === "text")
+        .map((block) => block.text)
+        .join("");
+    } else if (typeof data.content === "string") {
+      text = data.content;
     }
 
-    const text = data.content?.[0]?.text || '';
-    
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!text) {
+      console.error("No text in response:", JSON.stringify(data));
+      return NextResponse.json(
+        { error: "No text in API response" },
+        { status: 500 }
+      );
+    }
+
+    // Try to extract JSON from the response text
+    // Claude sometimes wraps JSON in markdown code blocks
+    let jsonStr = text;
+    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (jsonMatch) {
-      const result = JSON.parse(jsonMatch[0]);
-      return NextResponse.json(result);
+      jsonStr = jsonMatch[1].trim();
+    } else {
+      // Try to find raw JSON object
+      const braceMatch = text.match(/\{[\s\S]*\}/);
+      if (braceMatch) {
+        jsonStr = braceMatch[0];
+      }
     }
-    
-    return NextResponse.json({ error: 'Could not parse response', raw: text.substring(0, 200) }, { status: 500 });
-  } catch (e) {
-    console.error('Analyze error:', e);
-    return NextResponse.json({ error: 'Server error: ' + e.message }, { status: 500 });
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch (e) {
+      console.error("JSON parse failed. Raw text:", text);
+      // Try to extract just the bf number as fallback
+      const bfMatch = text.match(/(\d+(?:\.\d+)?)\s*%/);
+      if (bfMatch) {
+        parsed = { bf: parseFloat(bfMatch[1]), notes: text.slice(0, 100) };
+      } else {
+        return NextResponse.json(
+          { error: "Could not parse response: " + text.slice(0, 150) },
+          { status: 500 }
+        );
+      }
+    }
+
+    return NextResponse.json(parsed);
+  } catch (err) {
+    console.error("Route error:", err);
+    return NextResponse.json(
+      { error: err.message || "Server error" },
+      { status: 500 }
+    );
   }
 }
