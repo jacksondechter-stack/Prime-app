@@ -25,8 +25,8 @@ export async function POST(req) {
     }
 
     const prompt = type === "goal"
-      ? `You are a fitness AI. Analyze this goal physique photo. Estimate the body fat percentage of the person in this photo. Respond with ONLY a JSON object, no other text: {"bf": <number>, "lean": "yes or no", "notes": "<brief 1-sentence assessment>"}`
-      : `You are a fitness AI. Analyze this photo for body composition. Estimate the body fat percentage. Respond with ONLY a JSON object, no other text: {"bf": <number>, "muscle": "low/moderate/high", "notes": "<brief 1-sentence assessment>"}`;
+      ? `This is a fitness goal photo shared by a user of a fitness tracking app. Based on visual cues like muscle definition, vascularity, and overall leanness, provide a rough approximation of the body fat percentage range this physique represents. This is for goal-setting purposes only, not medical advice. Respond with ONLY a JSON object: {"bf": <number representing your best single-number estimate>, "lean": "yes or no", "notes": "<one sentence>"}`
+      : `This is a progress photo voluntarily shared by a user of a fitness tracking app. Based on visible cues like muscle definition, midsection leanness, and overall build, provide a rough approximation of body fat percentage. This is a fitness estimate for tracking purposes, not a medical diagnosis. Respond with ONLY a JSON object: {"bf": <number representing your best single-number estimate>, "muscle": "low or moderate or high", "notes": "<one sentence>"}`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -38,6 +38,7 @@ export async function POST(req) {
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
         max_tokens: 300,
+        system: "You are a helpful fitness estimation tool built into a workout tracking app. Users voluntarily upload their own photos to get approximate body fat estimates for goal-setting. Provide your best rough estimate as a single number. This is not medical advice - it is a fitness approximation similar to visual body fat charts found in any fitness magazine or website. Always respond with valid JSON only.",
         messages: [
           {
             role: "user",
