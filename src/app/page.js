@@ -124,77 +124,77 @@ function TT({E,wo,go,prof,logs,woDay}){
   const burnR=40,burnC=2*Math.PI*burnR;const burnPct=Math.min(1,(E.wCal||0)/300);
   const dots=[];for(let i=6;i>=0;i--){const d2=new Date();d2.setDate(d2.getDate()-i);const k2=ds(d2);if(k2===ds()){dots.push("today");}else if(logs[k2]){const dx=logs[k2];let fc=0;["b","l","d","s"].forEach(m=>(dx[m]||[]).forEach(x=>{fc+=x.cal||0}));let dc=0;(dx.dr||[]).forEach(x=>{dc+=(x.cal||0)*(x.qty||1)});let wc=0;const bw=(E.cw||150)*.4536;['woPush','woPull','woLegs'].forEach(wk=>(dx[wk]||[]).forEach(ex=>{if(ex.done)wc+=Math.round((ex.met||4)*bw*3*1.5/60)}));(dx.cardio||[]).forEach(c=>{wc+=Math.round((c.met||5)*bw*(c.mins||30)/60)});dots.push((fc+dc)-((E.tdee||2000)+wc)<=0?"on":"fail");}else{dots.push("empty");}}
   const exercises=wo!=="Rest"?WO[wo]||[]:[];
-  const Cd=({children,style})=><div style={{background:"#080808",border:"1px solid #111",borderRadius:18,padding:18,...style}}>{children}</div>;
+  const Cd=({children,style:s})=><div style={{background:"#060606",border:"1.5px solid #111",borderRadius:20,padding:20,...s}}>{children}</div>;
   return <div>
-    <div style={{display:"flex",gap:3,marginBottom:16}}>{weekDays.map((wd,i)=><div key={i} onClick={()=>go("train")} style={{flex:1,textAlign:"center",padding:"8px 0",borderRadius:12,cursor:"pointer",background:wd.today?"#e8372c":"transparent",boxShadow:wd.today?"0 2px 12px rgba(232,55,44,.25)":"none",position:"relative"}}>
-      <div style={{fontSize:9,fontWeight:700,color:wd.today?"rgba(255,255,255,.6)":"#333",letterSpacing:.5}}>{wd.l}</div>
-      <div style={{fontSize:14,fontWeight:700,color:wd.today?"#fff":wd.done?"#30d158":"#444",margin:"2px 0 1px"}}>{wd.d}</div>
-      <div style={{fontSize:7,fontWeight:700,color:wd.today?"rgba(255,255,255,.8)":wd.wo==="Rest"?"#1a1a1a":"#e8372c",letterSpacing:.3,textTransform:"uppercase"}}>{wd.wo}</div>
-      {wd.done&&!wd.today&&<div style={{position:"absolute",bottom:3,left:"50%",transform:"translateX(-50%)",width:4,height:4,borderRadius:2,background:"#30d158"}}/>}
+    <div style={{display:"flex",gap:3,marginBottom:18}}>{weekDays.map((wd,i)=><div key={i} onClick={()=>go("train")} style={{flex:1,textAlign:"center",padding:"10px 0",borderRadius:14,cursor:"pointer",background:wd.today?"#e8372c":wd.done?"#30d15808":"transparent",border:wd.today?"none":wd.done?"1px solid #30d15815":"1px solid transparent",boxShadow:wd.today?"0 4px 16px rgba(232,55,44,.3)":"none",position:"relative"}}>
+      <div style={{fontSize:9,fontWeight:700,color:wd.today?"rgba(255,255,255,.7)":"#333",letterSpacing:.5}}>{wd.l}</div>
+      <div style={{fontSize:15,fontWeight:800,color:wd.today?"#fff":wd.done?"#30d158":"#444",margin:"3px 0 2px"}}>{wd.d}</div>
+      <div style={{fontSize:7,fontWeight:700,color:wd.today?"rgba(255,255,255,.85)":wd.wo==="Rest"?"#1a1a1a":"#e8372c",letterSpacing:.3,textTransform:"uppercase"}}>{wd.wo}</div>
+      {wd.done&&!wd.today&&<div style={{position:"absolute",bottom:4,left:"50%",transform:"translateX(-50%)",width:4,height:4,borderRadius:2,background:"#30d158",boxShadow:"0 0 4px #30d15860"}}/>}
     </div>)}</div>
-    <Cd style={{display:"flex",alignItems:"center",gap:18,marginBottom:14}}>
+    <Cd style={{display:"flex",alignItems:"center",gap:20,marginBottom:14}}>
       <div style={{position:"relative",width:130,height:130,flexShrink:0}}>
         <svg width={130} height={130} style={{transform:"rotate(-90deg)"}}>
           <circle cx={65} cy={65} r={R} fill="none" stroke="#111" strokeWidth={10}/>
-          {cleanLen>0&&<circle cx={65} cy={65} r={R} fill="none" stroke="#30d158" strokeWidth={10} strokeDasharray={`${cleanLen} ${C-cleanLen}`} strokeLinecap="round" style={{filter:"drop-shadow(0 0 4px rgba(48,209,88,.25))"}}/>}
+          {cleanLen>0&&<circle cx={65} cy={65} r={R} fill="none" stroke="#30d158" strokeWidth={10} strokeDasharray={`${cleanLen} ${C-cleanLen}`} strokeLinecap="round" style={{filter:"drop-shadow(0 0 6px rgba(48,209,88,.3))"}}/>}
           {junkLen>0&&<circle cx={65} cy={65} r={R} fill="none" stroke="#ff9f0a" strokeWidth={10} strokeDasharray={`${junkLen} ${C-junkLen}`} strokeDashoffset={-cleanLen} strokeLinecap="round" style={{filter:"drop-shadow(0 0 4px rgba(255,159,10,.2))"}}/>}
           {alcLen>0&&<circle cx={65} cy={65} r={R} fill="none" stroke="#ffd60a" strokeWidth={10} strokeDasharray={`${alcLen} ${C-alcLen}`} strokeDashoffset={-(cleanLen+junkLen)} strokeLinecap="round"/>}
           <circle cx={65} cy={65} r={burnR} fill="none" stroke="#111" strokeWidth={6}/>
-          <circle cx={65} cy={65} r={burnR} fill="none" stroke="#e8372c" strokeWidth={6} strokeDasharray={`${burnPct*burnC} ${burnC-burnPct*burnC}`} strokeLinecap="round" style={{filter:"drop-shadow(0 0 4px rgba(232,55,44,.2))"}}/>
+          <circle cx={65} cy={65} r={burnR} fill="none" stroke="#e8372c" strokeWidth={6} strokeDasharray={`${burnPct*burnC} ${burnC-burnPct*burnC}`} strokeLinecap="round" style={{filter:"drop-shadow(0 0 4px rgba(232,55,44,.25))"}}/>
         </svg>
         <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-          <span style={{fontFamily:"monospace",fontSize:24,fontWeight:700,color:E.net<0?"#30d158":E.net>300?"#e8372c":"#ffd60a"}}>{E.net>0?"+":""}{E.net}</span>
-          <span style={{fontSize:8,color:"#444",fontWeight:600,letterSpacing:1,textTransform:"uppercase"}}>Net</span>
+          <span style={{fontFamily:"monospace",fontSize:26,fontWeight:800,letterSpacing:"-1px",color:E.net<0?"#30d158":E.net>300?"#e8372c":"#ffd60a"}}>{E.net>0?"+":""}{E.net}</span>
+          <span style={{fontSize:8,color:"#3a3a3a",fontWeight:700,letterSpacing:1.5,textTransform:"uppercase"}}>Net</span>
         </div>
       </div>
-      <div style={{flex:1,display:"flex",flexDirection:"column",gap:5}}>
+      <div style={{flex:1,display:"flex",flexDirection:"column",gap:6}}>
         {[{dot:"#30d158",n:"Clean food",v:E.cleanCal||0,c:"#30d158"},{dot:"#ff9f0a",n:"Sugar",v:E.fSugar||0,c:"#ff9f0a"},{dot:"#ffd60a",n:"Alcohol",v:E.dCal||0,c:E.dCal?"#ffd60a":"#222"}].map((x,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:8}}>
-          <div style={{width:8,height:8,borderRadius:4,background:x.dot,flexShrink:0}}/>
-          <div style={{flex:1,display:"flex",justifyContent:"space-between"}}><span style={{fontSize:11,color:"#666"}}>{x.n}</span><span style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:x.c}}>{x.v}</span></div>
+          <div style={{width:8,height:8,borderRadius:4,background:x.dot,flexShrink:0,boxShadow:`0 0 6px ${x.dot}30`}}/>
+          <div style={{flex:1,display:"flex",justifyContent:"space-between"}}><span style={{fontSize:11,color:"#555",fontWeight:500}}>{x.n}</span><span style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:x.c}}>{x.v}</span></div>
         </div>)}
-        <div style={{height:1,background:"#111",margin:"2px 0"}}/>
-        <div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:8,height:8,borderRadius:4,background:"#e8372c",flexShrink:0}}/><div style={{flex:1,display:"flex",justifyContent:"space-between"}}><span style={{fontSize:11,color:"#666"}}>Burned</span><span style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:"#e8372c"}}>{E.wCal}</span></div></div>
-        <div style={{height:1,background:"#111",margin:"2px 0"}}/>
-        <div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:7,height:7,borderRadius:4,border:"1px solid #333",flexShrink:0}}/><div style={{flex:1,display:"flex",justifyContent:"space-between"}}><span style={{fontSize:11,color:"#666"}}>Budget left</span><span style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:"#444"}}>{Math.max(0,budget-E.totalIn)}</span></div></div>
+        <div style={{height:1,background:"#151515",margin:"3px 0"}}/>
+        <div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:8,height:8,borderRadius:4,background:"#e8372c",flexShrink:0,boxShadow:"0 0 6px #e8372c30"}}/><div style={{flex:1,display:"flex",justifyContent:"space-between"}}><span style={{fontSize:11,color:"#555",fontWeight:500}}>Burned</span><span style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:"#e8372c"}}>{E.wCal}</span></div></div>
+        <div style={{height:1,background:"#151515",margin:"3px 0"}}/>
+        <div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:7,height:7,borderRadius:4,border:"1.5px solid #2a2a2a",flexShrink:0}}/><div style={{flex:1,display:"flex",justifyContent:"space-between"}}><span style={{fontSize:11,color:"#555",fontWeight:500}}>Budget left</span><span style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:"#3a3a3a"}}>{Math.max(0,budget-E.totalIn)}</span></div></div>
       </div>
     </Cd>
-    <div style={{display:"flex",gap:6,marginBottom:14}}>
-      {[{l:"Protein",v:E.fP+"g",p:E.fP/E.proT,c:"#ff9f0a"},{l:"Carbs",v:E.fC+"g",p:.55,c:"#0a84ff"},{l:"Fat",v:E.fF+"g",p:.35,c:"#ffd60a"}].map((x,i)=><div key={i} style={{flex:1,background:"#080808",border:"1px solid #111",borderRadius:12,padding:"10px 8px",textAlign:"center"}}>
-        <div style={{fontSize:7,fontWeight:700,color:"#222",letterSpacing:1.5,textTransform:"uppercase"}}>{x.l}</div>
-        <div style={{fontFamily:"monospace",fontSize:15,fontWeight:700,color:x.c,marginTop:3}}>{x.v}</div>
-        <div style={{height:2,background:"#111",borderRadius:1,marginTop:6,overflow:"hidden"}}><div style={{height:"100%",borderRadius:1,background:x.c,width:`${Math.min(100,x.p*100)}%`}}/></div>
+    <div style={{display:"flex",gap:8,marginBottom:14}}>
+      {[{l:"Protein",v:E.fP+"g",p:E.fP/E.proT,c:"#ff9f0a"},{l:"Carbs",v:E.fC+"g",p:.55,c:"#0a84ff"},{l:"Fat",v:E.fF+"g",p:.35,c:"#ffd60a"}].map((x,i)=><div key={i} style={{flex:1,background:"#060606",border:"1.5px solid #111",borderRadius:14,padding:"12px 10px",textAlign:"center"}}>
+        <div style={{fontSize:7,fontWeight:700,color:"#2a2a2a",letterSpacing:2,textTransform:"uppercase"}}>{x.l}</div>
+        <div style={{fontFamily:"monospace",fontSize:17,fontWeight:800,color:x.c,marginTop:4,letterSpacing:"-0.5px"}}>{x.v}</div>
+        <div style={{height:3,background:"#111",borderRadius:2,marginTop:8,overflow:"hidden"}}><div style={{height:"100%",borderRadius:2,background:x.c,width:`${Math.min(100,x.p*100)}%`,boxShadow:`0 0 6px ${x.c}30`}}/></div>
       </div>)}
     </div>
     <Cd style={{marginBottom:14,padding:0,overflow:"hidden"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 16px",borderBottom:"1px solid #0d0d0d"}}>
-        <span style={{fontSize:15,fontWeight:700}}>{wo==="Rest"?"Rest Day":wo+" Day"}</span>
-        <span onClick={()=>go("train")} style={{fontSize:10,fontWeight:700,color:"#e8372c",background:"rgba(232,55,44,.08)",padding:"5px 12px",borderRadius:16,cursor:"pointer"}}>{wo==="Rest"?"Off":"Start →"}</span>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 18px",borderBottom:"1px solid #0d0d0d"}}>
+        <span style={{fontSize:16,fontWeight:800,letterSpacing:"-0.3px"}}>{wo==="Rest"?"Rest Day":wo+" Day"}</span>
+        <span onClick={()=>go("train")} style={{fontSize:10,fontWeight:700,color:"#e8372c",background:"rgba(232,55,44,.08)",padding:"6px 14px",borderRadius:20,cursor:"pointer",letterSpacing:0.3}}>{wo==="Rest"?"Off":"Start →"}</span>
       </div>
-      {exercises.slice(0,6).map((ex,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 16px",borderBottom:i<5?"1px solid #080808":"none"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:20,height:20,borderRadius:6,background:"#0d0d0d",border:"1px solid #1a1a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#333",fontFamily:"monospace"}}>{i+1}</div>
-          <div><div style={{fontSize:13,fontWeight:600}}>{ex.n}</div><div style={{fontSize:10,color:"#333"}}>{ex.s} {"×"} {ex.r}</div></div>
+      {exercises.slice(0,6).map((ex,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 18px",borderBottom:i<5?"1px solid #080808":"none"}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <div style={{width:22,height:22,borderRadius:7,background:"#0a0a0a",border:"1px solid #1a1a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800,color:"#333",fontFamily:"monospace"}}>{i+1}</div>
+          <div><div style={{fontSize:13,fontWeight:600}}>{ex.n}</div><div style={{fontSize:10,color:"#333",fontWeight:500}}>{ex.s} {"×"} {ex.r}</div></div>
         </div>
-        <div style={{fontSize:8,fontWeight:700,color:"rgba(232,55,44,.5)",letterSpacing:.5,textTransform:"uppercase"}}>{ex.m}</div>
+        <div style={{fontSize:8,fontWeight:700,color:"rgba(232,55,44,.4)",letterSpacing:.5,textTransform:"uppercase"}}>{ex.m}</div>
       </div>)}
     </Cd>
-    <Cd style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 18px",marginBottom:14,background:"linear-gradient(135deg,#0a0800,#080808)",borderColor:"rgba(255,159,10,.1)"}}>
-      <div style={{display:"flex",alignItems:"center",gap:12}}>
-        <span style={{fontSize:24}}>{"🔥"}</span>
+    <Cd style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",marginBottom:14,background:"linear-gradient(135deg,#080600,#060606)",borderColor:"rgba(255,159,10,.08)"}}>
+      <div style={{display:"flex",alignItems:"center",gap:14}}>
+        <div style={{width:44,height:44,borderRadius:12,background:"#ff9f0a10",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff9f0a" strokeWidth="2.5" strokeLinecap="round"><path d="M12 2C6 8 2 12 2 16c0 5 4 6 10 6s10-1 10-6c0-4-4-8-10-14z"/></svg></div>
         <div>
           <div style={{display:"flex",alignItems:"baseline",gap:6}}>
-            <span style={{fontFamily:"monospace",fontSize:28,fontWeight:700,color:"#ff9f0a"}}>{E.netStreak||0}</span>
-            <span style={{fontSize:11,fontWeight:700,color:"#ff9f0a",letterSpacing:1,textTransform:"uppercase"}}>Net Streak</span>
+            <span style={{fontFamily:"monospace",fontSize:28,fontWeight:800,color:"#ff9f0a",letterSpacing:"-1px"}}>{E.netStreak||0}</span>
+            <span style={{fontSize:10,fontWeight:700,color:"#ff9f0a80",letterSpacing:1.5,textTransform:"uppercase"}}>Net Streak</span>
           </div>
-          <div style={{fontSize:10,color:"#333"}}>{E.netStreak||0} consecutive days net negative</div>
+          <div style={{fontSize:10,color:"#333",fontWeight:500}}>{E.netStreak||0} consecutive days net negative</div>
         </div>
       </div>
-      <div style={{display:"flex",gap:4}}>{dots.map((d,i)=><div key={i} style={{width:8,height:8,borderRadius:4,border:d==="empty"?"1px solid #222":"none",background:d==="on"?"#30d158":d==="fail"?"#e8372c":d==="today"?"#444":"transparent",boxShadow:d==="on"?"0 0 6px rgba(48,209,88,.3)":"none"}}/>)}</div>
+      <div style={{display:"flex",gap:4}}>{dots.map((d,i)=><div key={i} style={{width:8,height:8,borderRadius:4,border:d==="empty"?"1.5px solid #1a1a1a":"none",background:d==="on"?"#30d158":d==="fail"?"#e8372c":d==="today"?"#333":"transparent",boxShadow:d==="on"?"0 0 6px rgba(48,209,88,.4)":"none"}}/>)}</div>
     </Cd>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
-      {[{l:"Arrival",v:E.proj?E.proj.toLocaleDateString("en-US",{month:"short",day:"numeric"}):"—",c:E.onT?"#30d158":"#e8372c"},{l:"Rate",v:E.wLR.toFixed(1),c:"#fff"},{l:"To Lose",v:E.toLose.toFixed(1),c:"#e8372c"},{l:"On Track",v:E.onT?"Yes":"No",c:E.onT?"#30d158":"#e8372c"}].map((x,i)=><div key={i} style={{background:"#080808",border:"1px solid #111",borderRadius:14,padding:"12px 8px",textAlign:"center"}}>
-        <div style={{fontSize:7,fontWeight:700,color:"#222",letterSpacing:1.5,textTransform:"uppercase"}}>{x.l}</div>
-        <div style={{fontFamily:"monospace",fontSize:16,fontWeight:700,color:x.c,marginTop:4}}>{x.v}</div>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+      {[{l:"Arrival",v:E.proj?E.proj.toLocaleDateString("en-US",{month:"short",day:"numeric"}):"—",c:E.onT?"#30d158":"#e8372c"},{l:"Rate",v:E.wLR.toFixed(1),c:"#fff"},{l:"To Lose",v:E.toLose.toFixed(1),c:"#e8372c"},{l:"On Track",v:E.onT?"Yes":"No",c:E.onT?"#30d158":"#e8372c"}].map((x,i)=><div key={i} style={{background:"#060606",border:"1.5px solid #111",borderRadius:16,padding:"14px 8px",textAlign:"center"}}>
+        <div style={{fontSize:7,fontWeight:700,color:"#2a2a2a",letterSpacing:2,textTransform:"uppercase"}}>{x.l}</div>
+        <div style={{fontFamily:"monospace",fontSize:17,fontWeight:800,color:x.c,marginTop:5,letterSpacing:"-0.5px"}}>{x.v}</div>
       </div>)}
     </div>
   </div>;}
