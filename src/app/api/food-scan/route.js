@@ -1,98 +1,58 @@
-import { NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
 
-export const maxDuration = 30;
+const client = new Anthropic();
 
 export async function POST(req) {
   try {
     const { image } = await req.json();
-    if (!image) {
-      return NextResponse.json({ error: "No image provided" }, { status: 400 });
-    }
+    if (!image) return Response.json({ error: "No image" }, { status: 400 });
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1024,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "image",
-                source: {
-                  type: "base64",
-                  media_type: "image/jpeg",
-                  data: image,
-                },
-              },
-              {
-                type: "text",
-                text: `Identify every food item visible in this photo. For each item, estimate the portion size and provide accurate nutritional info.
+    const mediaType = image.startsWith("/9j/") ? "image/jpeg" : "image/png";
+    
+    const msg = await client.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      system: `You are a nutrition expert with access to USDA FoodData Central knowledge. Analyze the food in this image and return nutritional data as JSON.
 
-Return ONLY a JSON array like this, no other text:
-[{"name":"Grilled Chicken Breast","cal":165,"p":31,"c":0,"f":3.6,"sugar":0,"serving":"~6oz","junk":false},{"name":"French Fries","cal":365,"p":4,"c":44,"f":17,"sugar":0,"serving":"medium","junk":true,"junkReason":"deep fried"}]
+Return ONLY a JSON object with an "items" array. Each item must have:
+- name (string): specific food name (brand if identifiable)
+- cal (number): total calories
+- p (number): protein in grams
+- c (number): total carbs in grams  
+- f (number): total fat in grams
+- sugar (number): total sugar in grams
+- fiber (number): dietary fiber in grams
+- sodium (number): sodium in milligrams
+- satFat (number): saturated fat in grams
+- addedSugar (number): added sugar in grams
+- serving (string): estimated serving size
+- junk (boolean): see criteria below
+- junkReason (string): brief reason if junk is true
 
-Rules:
-- Be specific with food names (not just "meat" - say "grilled chicken thigh")
-- Estimate realistic portion sizes based on what you see
-- junk=true for fried foods, sugary drinks, candy, chips, fast food, etc
-- Include a junkReason if junk=true
-- If you can identify the restaurant or brand, use their actual nutrition data
-- Return valid JSON array only, no markdown, no explanation`,
-              },
-            ],
-          },
-        ],
-      }),
+For the "junk" field, use NRF-inspired evidence-based criteria:
+- junk=true if: added sugar > 25% of calories, OR protein < 2g per 100cal AND calories > 150, OR food is ultra-processed (candy, soda, chips, fast food fried items, pastries)  
+- junk=false if: food has meaningful protein (>2g/100cal), is minimally processed, or is a whole food regardless of calorie count
+
+Be accurate. Use USDA values for common foods. For mixed dishes, estimate component-level nutrients.
+Return ONLY valid JSON, no markdown.`,
+      messages: [{
+        role: "user",
+        content: [{
+          type: "image",
+          source: { type: "base64", media_type: mediaType, data: image }
+        }, {
+          type: "text",
+          text: "Identify all food items in this image and provide detailed nutritional data for each."
+        }]
+      }],
     });
 
-    if (!response.ok) {
-      const err = await response.text();
-      console.error("Anthropic API error:", response.status, err);
-      return NextResponse.json({ error: "AI scan failed" }, { status: 500 });
-    }
-
-    const data = await response.json();
-    const text = data.content?.[0]?.text || "[]";
-
-    let items;
-    try {
-      const clean = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
-      items = JSON.parse(clean);
-    } catch (e) {
-      const match = text.match(/\[[\s\S]*\]/);
-      if (match) {
-        try {
-          items = JSON.parse(match[0]);
-        } catch (e2) {
-          return NextResponse.json({ error: "Could not parse food items" }, { status: 500 });
-        }
-      } else {
-        return NextResponse.json({ error: "No food items found" }, { status: 500 });
-      }
-    }
-
-    items = items.map((item) => ({
-      name: item.name || "Unknown food",
-      cal: Math.round(item.cal || item.calories || 0),
-      p: Math.round(item.p || item.protein || 0),
-      c: Math.round(item.c || item.carbs || 0),
-      f: Math.round(item.f || item.fat || 0),
-      sugar: Math.round(item.sugar || 0),
-      serving: item.serving || "",
-      junk: item.junk || false,
-      junkReason: item.junkReason || "",
-    }));
-
-    return NextResponse.json({ items });
-  } catch (error) {
-    console.error("Food scan error:", error);
-    return NextResponse.json({ error: "Scan failed: " + error.message }, { status: 500 });
+    const text = msg.content[0]?.text || "";
+    const clean = text.replace(/```json|```/g, "").trim();
+    const data = JSON.parse(clean);
+    return Response.json(data);
+  } catch (e) {
+    console.error("Food scan error:", e);
+    return Response.json({ error: "Food scan failed", details: e.message }, { status: 500 });
   }
 }
