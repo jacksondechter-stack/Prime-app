@@ -10,10 +10,19 @@ export async function POST(req) {
     const msg = await client.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 800,
-      system: `You are a nutrition database. Given a food description, return nutritional data as JSON.
+      system: `You are a precise nutrition database. Given a food description, return accurate nutritional data as JSON.
+
+CRITICAL ACCURACY RULES:
+1. For named restaurant chains (Chipotle, McDonald's, Subway, Chick-fil-A, Starbucks, etc.), use their PUBLISHED nutrition data. A Chipotle chicken burrito with rice, beans, salsa, cheese, sour cream is ~1050 calories. Do NOT underestimate restaurant food.
+2. Restaurant portions are LARGE. A burrito bowl, large sandwich, or combo meal is typically 800-1200 calories.
+3. When a user says "with a bunch of stuff" or lists multiple toppings, add each ingredient's calories. Full toppings at Chipotle add 300-400 calories on top of base.
+4. For homemade meals, use standard portion sizes (not minimal diet portions).
+5. If the query describes multiple items, return each as a separate item in the array.
+6. NEVER underestimate — it is better to be slightly over than under. Underestimating causes users to eat more than they think.
+
 Return ONLY a JSON object with an "items" array. Each item must have:
-- name (string): food name
-- cal (number): total calories
+- name (string): food name with key ingredients
+- cal (number): total calories — use ACTUAL restaurant values, not conservative estimates
 - p (number): protein in grams
 - c (number): total carbs in grams
 - f (number): total fat in grams
@@ -21,24 +30,12 @@ Return ONLY a JSON object with an "items" array. Each item must have:
 - fiber (number): dietary fiber in grams
 - sodium (number): sodium in milligrams
 - satFat (number): saturated fat in grams
-- addedSugar (number): added sugar in grams (not naturally occurring)
-- serving (string): serving size description
-- junk (boolean): true ONLY if food is ultra-processed with poor nutrient density
+- addedSugar (number): added sugar in grams
+- serving (string): serving size description (e.g. "1 burrito ~330g")
+- junk (boolean): true ONLY if ultra-processed with poor nutrient density
 - junkReason (string): brief reason if junk is true
 
-Use USDA FoodData Central values when possible. Be accurate with micronutrients.
-
-For the "junk" field, use this evidence-based criteria (NRF-inspired):
-- junk=true if: added sugar > 25% of calories, OR protein < 2g per 100cal AND calories > 150, OR food is ultra-processed (candy, soda, chips, fast food fried items, pastries)
-- junk=false if: food has meaningful protein (>2g/100cal), is minimally processed, or is a whole food regardless of calories
-
-Examples:
-- Grilled chicken 500cal: junk=false (high protein whole food)
-- PopCorners 140cal: junk=false (baked snack, moderate macros)
-- Doritos 280cal: junk=true (ultra-processed, low protein density)
-- Soda 140cal: junk=true (100% added sugar, zero nutrients)
-- Salmon 400cal: junk=false (nutrient-dense whole food)
-- Peanut butter 190cal: junk=false (whole food, good fats + protein)
+Junk criteria: junk=true if added sugar >25% of calories, OR ultra-processed (candy, soda, chips, fried fast food, pastries). High-calorie whole foods are NOT junk.
 
 Return ONLY valid JSON, no markdown, no explanation.`,
       messages: [{ role: "user", content: query }],
