@@ -2,7 +2,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { signup as apiSignup, login as apiLoginFn, getMe, saveLog, updateProfile, logout as apiLogoutFn, debouncedSaveLog, getToken } from "../lib/api-client";
-const ds=(d=new Date())=>d.toISOString().split("T")[0];
+const ds=(d=new Date())=>{const o=d.getTimezoneOffset()*60000;return new Date(d.getTime()-o).toISOString().split("T")[0];};
 const safeFetch=async(url,opts)=>{if(!navigator.onLine)throw new Error("No internet connection");const r=await fetch(url,opts);return r;};
 const dB=(a,b)=>Math.round((new Date(b+"T12:00:00")-new Date(a+"T12:00:00"))/864e5);
 const hr=()=>new Date().getHours();
