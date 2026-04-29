@@ -75,7 +75,7 @@ async function handleGenerate(profile) {
 
   const {
     weight, goalWeight, bodyFat, goalBF, sex, age,
-    activity, goal, focus, equipment, deadline, time, recentWorkouts,
+    activity, goal, focus, equipment, deadline, time, recentWorkouts, customPrompt,
   } = profile;
 
   const isCutting = bodyFat && goalBF && +bodyFat > +goalBF;
@@ -95,6 +95,13 @@ Priorities: balance heavy compounds and moderate-rep isolation, mix strength (5-
   }
 
   const system = `You are an expert personal trainer. Generate a personalized workout.
+
+${customPrompt ? `USER'S SPECIFIC REQUEST FOR THIS WORKOUT (highest priority - build the workout to match this exact request, even if it deviates from the standard plan):
+"${customPrompt}"
+
+Interpret this request literally. If they say "mix push and pull", build a workout combining push and pull movements. If they say "going heavy", use lower reps (3-6) and heavier compound lifts. If they say "end with cardio", append cardio after strength work. If they specify a time limit, fit the workout in that time. If they mention equipment limits or pain/avoidance areas, respect those constraints absolutely.
+
+` : ''}
 
 CLIENT: ${sex || "unspecified"} sex, age ${age || "unspecified"}, ${weight || "?"}lbs → ${goalWeight || "?"}lbs, BF ${bodyFat || "?"}% → ${goalBF || "?"}%, trains ${activity || "3-4x/week"}, ${equipment || "full gym"}, ${time || "45-60 min"} sessions, deadline: ${deadline || "none"}, goal: ${goal || "recomp"}
 
