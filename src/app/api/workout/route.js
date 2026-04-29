@@ -51,12 +51,24 @@ async function handleLookup(profile, query) {
 {
   "name": "Official exercise name",
   "type": "strength" | "cardio" | "sport" | "flexibility",
+  "inputMode": "weighted" | "bodyweight" | "time" | "cardio_distance" | "cardio_incline",
   "muscles": ["Primary muscle", "Secondary muscle"],
   "met": <MET value 2-10>,
   "calPerMin": <calories per minute for a ${profile?.weight || 170}lb person>,
   "defaultSets": <recommended number of sets 2-5>,
   "tips": "One sentence form tip"
 }
+
+inputMode classification rules (CRITICAL — pick exactly one):
+- "weighted": loaded barbell/dumbbell/machine lifts where the user picks the weight (bench press, squat, deadlift, row, overhead press, curl, leg press, lat pulldown, tricep pushdown, etc.)
+- "bodyweight": exercises performed with bodyweight as primary resistance, COUNTED IN REPS (pull-ups, dips, push-ups, chin-ups, pistol squats, burpees, mountain climbers, jumping jacks, kettlebell swings, box jumps, jump squats, lunges without weight). The user logs reps per set. They may optionally add weight via a belt/vest.
+- "time": static holds counted in seconds (plank, side plank, wall sit, dead hang, L-sit, hollow hold, glute bridge hold, superman hold). NOT for dynamic exercises even if they feel cardio-like.
+- "cardio_distance": steady-state cardio with distance tracking (running, cycling, rowing, swimming, elliptical without incline focus). Logged as minutes + distance.
+- "cardio_incline": cardio where incline is the key variable (incline treadmill walk, stair master, stair climber, hill running). Logged as minutes + distance + incline%.
+
+If unsure between weighted and bodyweight (e.g., "lunges"), default to "bodyweight" unless the name explicitly includes "dumbbell", "barbell", "weighted", "loaded", etc.
+If unsure between bodyweight and time, default to "bodyweight" — only use "time" for true static holds.
+
 Return ONLY valid JSON. No markdown, no backticks, no explanation.`;
 
   try {
@@ -95,6 +107,16 @@ Priorities: balance heavy compounds and moderate-rep isolation, mix strength (5-
   }
 
   const system = `You are an expert personal trainer. Generate a personalized workout.
+
+CRITICAL: Each exercise in the response MUST include an "inputMode" field with one of these exact values:
+- "weighted" → barbell/dumbbell/machine lifts (user picks weight). Examples: bench, squat, row, OHP, curl, leg press.
+- "bodyweight" → bodyweight exercises counted in REPS (user may optionally add weight). Examples: pull-ups, dips, push-ups, burpees, mountain climbers, jumping jacks, lunges, box jumps.
+- "time" → static holds counted in SECONDS only. Examples: plank, wall sit, dead hang, L-sit. Do NOT use "time" for dynamic exercises like burpees.
+- "cardio_distance" → steady-state cardio (min + distance). Examples: running, cycling, rowing.
+- "cardio_incline" → cardio where incline matters (min + distance + incline%). Examples: incline treadmill walk, stair master.
+
+If unsure between weighted and bodyweight, default to "bodyweight" unless the name explicitly includes "dumbbell", "barbell", "weighted", "loaded".
+
 
 ${customPrompt ? `USER'S SPECIFIC REQUEST FOR THIS WORKOUT (highest priority - build the workout to match this exact request, even if it deviates from the standard plan):
 "${customPrompt}"
