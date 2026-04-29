@@ -132,11 +132,15 @@ ${philosophy}
 FOCUS: ${focus} day
 ${recentWorkouts ? `AVOID REPEATING: ${recentWorkouts}` : ""}
 
-Return ONLY a JSON object:
+Return ONLY a JSON object (note inputMode is REQUIRED for every exercise):
 {
   "title": "Workout title",
   "exercises": [
-    {"name":"Exercise Name","sets":3,"reps":"8-10","type":"strength","muscles":["Primary","Secondary"],"met":5,"notes":"Form cue"}
+    {"name":"Bench Press","sets":3,"reps":"8-10","type":"strength","inputMode":"weighted","muscles":["Chest","Triceps"],"met":5,"notes":"Form cue"},
+    {"name":"Pull-Ups","sets":3,"reps":"6-10","type":"strength","inputMode":"bodyweight","muscles":["Back","Biceps"],"met":6,"notes":"Form cue"},
+    {"name":"Plank","sets":3,"reps":"45 sec","type":"strength","inputMode":"time","muscles":["Core"],"met":4,"notes":"Form cue"},
+    {"name":"Treadmill Run","sets":1,"reps":"20 min","type":"cardio","inputMode":"cardio_distance","muscles":["Legs"],"met":8,"notes":"Form cue"},
+    {"name":"Incline Treadmill Walk","sets":1,"reps":"30 min","type":"cardio","inputMode":"cardio_incline","muscles":["Legs","Glutes"],"met":6,"notes":"Form cue"}
   ]
 }
 
@@ -148,15 +152,32 @@ RULES: 5-7 exercises. First 2-3 compound, last 2-3 isolation. Every exercise nee
 
     if (!data.exercises || !Array.isArray(data.exercises)) throw new Error("Bad structure");
 
-    data.exercises = data.exercises.map((ex) => ({
-      name: ex.name || "Unknown Exercise",
-      sets: ex.sets || 3,
-      reps: ex.reps || "10-12",
-      type: ex.type || "strength",
-      muscles: ex.muscles || [],
-      met: ex.met || 4,
-      notes: ex.notes || "",
-    }));
+    data.exercises = data.exercises.map((ex) => {
+      // Auto-classify inputMode if AI didn't return one (defensive fallback)
+      let _im = ex.inputMode;
+      if (!_im) {
+        const _n = (ex.name || "").toLowerCase();
+        if (ex.type === "cardio" || ex.type === "sport") {
+          _im = (_n.includes("incline") || _n.includes("stair") || _n.includes("hill")) ? "cardio_incline" : "cardio_distance";
+        } else if (_n.includes("plank") || _n.includes("wall sit") || _n.includes("dead hang") || _n.includes("l-sit") || _n.includes("hollow hold") || _n.includes("superman hold")) {
+          _im = "time";
+        } else if ((_n.includes("pull-up") || _n.includes("pullup") || _n.includes("chin-up") || _n.includes("chinup") || _n.includes("dip") || _n.includes("push-up") || _n.includes("pushup") || _n.includes("burpee") || _n.includes("mountain climber") || _n.includes("jumping jack") || _n.includes("box jump") || _n.includes("kettlebell swing") || _n.includes("pistol squat") || _n.includes("muscle-up") || _n.includes("muscleup") || _n.includes("hanging knee") || _n.includes("hanging leg")) && !_n.includes("dumbbell") && !_n.includes("barbell") && !_n.includes("weighted") && !_n.includes("loaded")) {
+          _im = "bodyweight";
+        } else {
+          _im = "weighted";
+        }
+      }
+      return {
+        name: ex.name || "Unknown Exercise",
+        sets: ex.sets || 3,
+        reps: ex.reps || "10-12",
+        type: ex.type || "strength",
+        inputMode: _im,
+        muscles: ex.muscles || [],
+        met: ex.met || 4,
+        notes: ex.notes || "",
+      };
+    });
 
     return Response.json(data);
   } catch {
@@ -164,34 +185,34 @@ RULES: 5-7 exercises. First 2-3 compound, last 2-3 isolation. Every exercise nee
       Push: {
         title: "Push Day",
         exercises: [
-          {name:"Bench Press",sets:4,reps:"8-10",type:"strength",muscles:["Chest","Triceps"],met:5,notes:"Retract shoulder blades, feet flat"},
-          {name:"Overhead Press",sets:3,reps:"8-10",type:"strength",muscles:["Shoulders","Triceps"],met:5,notes:"Brace core, press straight up"},
-          {name:"Incline DB Press",sets:3,reps:"10-12",type:"strength",muscles:["Upper Chest"],met:4.5,notes:"30-45 degree angle"},
-          {name:"Lateral Raises",sets:3,reps:"12-15",type:"strength",muscles:["Side Delts"],met:3.5,notes:"Slight elbow bend, control descent"},
-          {name:"Tricep Pushdowns",sets:3,reps:"12-15",type:"strength",muscles:["Triceps"],met:3,notes:"Elbows pinned at sides"},
-          {name:"Overhead Tri Extension",sets:3,reps:"10-12",type:"strength",muscles:["Triceps"],met:3,notes:"Keep elbows close to head"},
+          {name:"Bench Press",sets:4,reps:"8-10",type:"strength",inputMode:"weighted",muscles:["Chest","Triceps"],met:5,notes:"Retract shoulder blades, feet flat"},
+          {name:"Overhead Press",sets:3,reps:"8-10",type:"strength",inputMode:"weighted",muscles:["Shoulders","Triceps"],met:5,notes:"Brace core, press straight up"},
+          {name:"Incline DB Press",sets:3,reps:"10-12",type:"strength",inputMode:"weighted",muscles:["Upper Chest"],met:4.5,notes:"30-45 degree angle"},
+          {name:"Lateral Raises",sets:3,reps:"12-15",type:"strength",inputMode:"weighted",muscles:["Side Delts"],met:3.5,notes:"Slight elbow bend, control descent"},
+          {name:"Tricep Pushdowns",sets:3,reps:"12-15",type:"strength",inputMode:"weighted",muscles:["Triceps"],met:3,notes:"Elbows pinned at sides"},
+          {name:"Overhead Tri Extension",sets:3,reps:"10-12",type:"strength",inputMode:"weighted",muscles:["Triceps"],met:3,notes:"Keep elbows close to head"},
         ],
       },
       Pull: {
         title: "Pull Day",
         exercises: [
-          {name:"Barbell Rows",sets:4,reps:"8-10",type:"strength",muscles:["Back","Biceps"],met:5,notes:"Hinge at hips, pull to lower chest"},
-          {name:"Lat Pulldowns",sets:3,reps:"10-12",type:"strength",muscles:["Lats"],met:4.5,notes:"Pull to upper chest, squeeze lats"},
-          {name:"Cable Rows",sets:3,reps:"10-12",type:"strength",muscles:["Mid Back"],met:4,notes:"Squeeze shoulder blades together"},
-          {name:"Face Pulls",sets:3,reps:"15-20",type:"strength",muscles:["Rear Delts"],met:3,notes:"Pull to face, external rotate"},
-          {name:"Barbell Curls",sets:3,reps:"10-12",type:"strength",muscles:["Biceps"],met:3.5,notes:"Full extension, no swinging"},
-          {name:"Hammer Curls",sets:3,reps:"10-12",type:"strength",muscles:["Biceps"],met:3.5,notes:"Neutral grip, control the negative"},
+          {name:"Barbell Rows",sets:4,reps:"8-10",type:"strength",inputMode:"weighted",muscles:["Back","Biceps"],met:5,notes:"Hinge at hips, pull to lower chest"},
+          {name:"Lat Pulldowns",sets:3,reps:"10-12",type:"strength",inputMode:"weighted",muscles:["Lats"],met:4.5,notes:"Pull to upper chest, squeeze lats"},
+          {name:"Cable Rows",sets:3,reps:"10-12",type:"strength",inputMode:"weighted",muscles:["Mid Back"],met:4,notes:"Squeeze shoulder blades together"},
+          {name:"Face Pulls",sets:3,reps:"15-20",type:"strength",inputMode:"weighted",muscles:["Rear Delts"],met:3,notes:"Pull to face, external rotate"},
+          {name:"Barbell Curls",sets:3,reps:"10-12",type:"strength",inputMode:"weighted",muscles:["Biceps"],met:3.5,notes:"Full extension, no swinging"},
+          {name:"Hammer Curls",sets:3,reps:"10-12",type:"strength",inputMode:"weighted",muscles:["Biceps"],met:3.5,notes:"Neutral grip, control the negative"},
         ],
       },
       Legs: {
         title: "Leg Day",
         exercises: [
-          {name:"Squats",sets:4,reps:"8-10",type:"strength",muscles:["Quads","Glutes"],met:6,notes:"Break at hips and knees, chest up"},
-          {name:"Romanian Deadlifts",sets:4,reps:"8-10",type:"strength",muscles:["Hams","Glutes"],met:5.5,notes:"Push hips back, slight knee bend"},
-          {name:"Leg Press",sets:3,reps:"10-12",type:"strength",muscles:["Quads"],met:5,notes:"Feet shoulder width, full range"},
-          {name:"Leg Curls",sets:3,reps:"12-15",type:"strength",muscles:["Hams"],met:3.5,notes:"Squeeze at top, slow negative"},
-          {name:"Calf Raises",sets:4,reps:"15-20",type:"strength",muscles:["Calves"],met:3,notes:"Full stretch, pause at top"},
-          {name:"Walking Lunges",sets:3,reps:"12 each",type:"strength",muscles:["Glutes","Quads"],met:5,notes:"Long stride, knee over ankle"},
+          {name:"Squats",sets:4,reps:"8-10",type:"strength",inputMode:"weighted",muscles:["Quads","Glutes"],met:6,notes:"Break at hips and knees, chest up"},
+          {name:"Romanian Deadlifts",sets:4,reps:"8-10",type:"strength",inputMode:"weighted",muscles:["Hams","Glutes"],met:5.5,notes:"Push hips back, slight knee bend"},
+          {name:"Leg Press",sets:3,reps:"10-12",type:"strength",inputMode:"weighted",muscles:["Quads"],met:5,notes:"Feet shoulder width, full range"},
+          {name:"Leg Curls",sets:3,reps:"12-15",type:"strength",inputMode:"weighted",muscles:["Hams"],met:3.5,notes:"Squeeze at top, slow negative"},
+          {name:"Calf Raises",sets:4,reps:"15-20",type:"strength",inputMode:"weighted",muscles:["Calves"],met:3,notes:"Full stretch, pause at top"},
+          {name:"Walking Lunges",sets:3,reps:"12 each",type:"strength",inputMode:"weighted",muscles:["Glutes","Quads"],met:5,notes:"Long stride, knee over ankle"},
         ],
       },
     };
